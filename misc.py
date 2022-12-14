@@ -63,7 +63,7 @@ def df_comparison(df_list, lineages):
     df[['REF', 'POS', 'ALT']] = df['mutation'].str.extract('(\D+)(\d+)(\D+)', expand=True)
     df['POS'] = pd.to_numeric(df['POS'], errors='coerce')
     df.sort_values(by=['POS'], ascending=True, inplace=True)
-    col_list = ['mutation', 'REF', 'POS', 'ALT', 'proportion_BA.1', 'proportion_BA.2', 'Lineage']
+    col_list = ['mutation', 'REF', 'POS', 'ALT', 'proportion_' + lineages[0], 'proportion_' + lineages[1], 'Lineage']
     df = df[col_list]
 
     return df
