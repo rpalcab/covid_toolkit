@@ -11,17 +11,24 @@ def get_markers(lineage, thr):
     r = requests.get(url)
     result = r.json()
     df = pd.json_normalize(result['data'])
-    df.drop(df[df['proportion'] < thr].index, inplace=True)
-    df.drop(columns=['proportion', 'count'], inplace=True)
+    # Removes SNPs below threshold
+    try:
+        df.drop(df[df['proportion'] < thr].index, inplace=True)
+        df.drop(columns=['count'], inplace=True)
+    # Unless no data returned from request
+    except:
+        print(f'No data available for {lineage}. Will be ignored.')
+        return None
 
     # Get REF, POS and ALT from df 
     df[['REF', 'POS', 'ALT']] = df['mutation'].str.extract('(\D+)(\d+)(\D+)', expand=True)
+    df.sort_values(by=['POS'], ascending=False, inplace=True)
 
     return df
 
-def consensus(df):
+def consensus(df, reference):
     # Read Wuhan reference
-    wuhan_seq = SeqIO.parse(open('/home/laura/iisgm/NC_045512.2.fasta'),'fasta')
+    wuhan_seq = SeqIO.parse(open(reference),'fasta')
     # Extract fasta sequence
     for fasta in wuhan_seq:
         seq = list(str(fasta.seq))
@@ -32,3 +39,10 @@ def consensus(df):
         seq[pos] = alt
 
     return ''.join(seq)
+
+def write_fasta(out_file, lineage, variant_fasta):
+    with open(out_file + '.fasta', 'w') as of:
+        ident = '>' + lineage + '\n'
+        of.write(ident)
+        of.write(variant_fasta)
+    return None
