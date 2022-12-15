@@ -13,7 +13,9 @@ The user can modify the minimum threshold frequency of SNPs to be considered (0.
 ```python extract_snps.py -l "BA.2.1* BQ.1" [-t 0.75] [-r /path/to/reference/NC_045512.2.fasta] -o .```
 
 ### lineage_comparison.py
-Differential SNPs between two SARS-CoV19 lineages or sublineages.
+Gets differential SNPs between two SARS-CoV19 lineages or sublineages. It creates a .csv file of the marker SNPs of both lineages, indicating to which one of them (or both) they belong.
+
+Similarly to ```extract_snps.py```, it can accept specific lineages or a set of sublineages (marked with an asterisk), as well as change the minimum threshold frequency of the SNPs.
 
 **Usage:**
 
