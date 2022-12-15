@@ -15,7 +15,7 @@ def get_arguments():
         input_group = parser.add_argument_group('Input', 'Input parameters')
         input_group.add_argument('-l', '--lin', metavar="Lineages", action='store', required=True, help='REQUIRED. Determine lineage(s). If two or more, use quotes')
         input_group.add_argument('-t', '--thr', metavar="Threshold", action='store', type=float, default=0.9, help='Determine threshold. Min=0, max=1')
-        input_group.add_argument('-r', '--ref', metavar="Reference", action='store', type=str, default='/home/laura/iisgm/NC_045512.2.fasta', help='COVID reference. Default: NC_045512.2')
+        input_group.add_argument('-r', '--ref', metavar="Reference", action='store', type=str, default=os.path.join(os.path.realpath(os.path.dirname(__file__)), 'NC_045512.2.fasta'), help='COVID reference. Default: NC_045512.2')
 
         output_group = parser.add_argument_group(
             'Output', 'Required parameter to output results')
