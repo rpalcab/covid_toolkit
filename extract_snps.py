@@ -5,7 +5,7 @@ import argparse
 import os
 
 # Local imports
-from misc import get_markers, consensus, write_fasta
+from utils import get_markers, consensus, write_fasta
 
 def get_arguments():
 
@@ -25,26 +25,32 @@ def get_arguments():
 
         return arguments
 
-# Get arguments from comment line
-args = get_arguments()
-lineages = [i for i in args.lin.split(' ')]
-thr = args.thr
-out_path = os.path.abspath(args.out)
-ref = args.ref
 
-# Check if reference file exists
-if os.path.exists(ref):
-    pass
-else:
-    exit(f'Error. Reference file not found. Please check {ref}')
+def main():
+        # Get arguments from comment line
+        args = get_arguments()
+        lineages = [i for i in args.lin.split(' ')]
+        thr = args.thr
+        out_path = os.path.abspath(args.out)
+        ref = args.ref
 
-# Extract SNPs of every lineage
-for lineage in lineages:
-    df = get_markers(lineage, thr)
-    if df is None:                                  # Next iteration if no SNP data
-        continue
-    variant_fasta = consensus(df, ref)
+        # Check if reference file exists
+        if os.path.exists(ref):
+            pass
+        else:
+            exit(f'Error. Reference file not found. Please check {ref}')
 
-    out_file = os.path.join(out_path, lineage)
-    df.to_csv(out_file + '.csv', index=False)       # Outuput SNP table to new_file
-    write_fasta(out_file, lineage, variant_fasta)   # Output sequence to new file
+        # Extract SNPs of every lineage
+        for lineage in lineages:
+            df = get_markers(lineage, thr)
+            if df is None:                                  # Next iteration if no SNP data
+                continue
+            variant_fasta = consensus(df, ref)
+
+            out_file = os.path.join(out_path, lineage)
+            df.to_csv(out_file + '.csv', index=False)       # Outuput SNP table to new_file
+            write_fasta(out_file, lineage, variant_fasta)   # Output sequence to new file
+
+               
+if __name__ == "__main__":
+        main()
