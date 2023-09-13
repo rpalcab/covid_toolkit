@@ -5,7 +5,7 @@ import argparse
 import os
 
 # Local imports
-from misc import get_markers, consensus, write_fasta
+from utils import get_markers, consensus, write_fasta
 
 def get_arguments():
 
