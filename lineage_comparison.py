@@ -28,10 +28,10 @@ def main():
         # Get arguments from command line
         args = get_arguments()
         lineages = [i for i in args.lin.split(' ')]
-        if len(lineages) == 2:
+        if len(lineages) >= 2:
             pass
         else:
-            exit('Please, introduce two COVID lineages')
+            exit('Please, introduce two or more COVID lineages')
         thr = args.thr
         out_path = os.path.abspath(args.out)
 
@@ -39,12 +39,12 @@ def main():
 
         # Get marker SNPs of two lineages
         for i, lineage in enumerate(lineages):
-            df_list.append(get_markers(lineage, thr))
+            df_list.append(get_markers(lineage, 0))
             if df_list[i] is None:                                  # Exit if no data of a lineage
                 exit(f'Lineage {lineage} is not valid. Comparison could not be completed')
 
         # Lineages comparison
-        comp_df = df_comparison(df_list, lineages)
+        comp_df = df_comparison(df_list, lineages, thr)
 
         out_file = os.path.join(out_path, lineages[0] + '_' + lineages[1])
         comp_df.to_csv(out_file + '.csv', index=False)

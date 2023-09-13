@@ -46,24 +46,43 @@ def write_fasta(out_file, lineage, variant_fasta):
         of.write(variant_fasta)                                 # Fasta sequence
     return None
 
-def df_comparison(df_list, lineages):
-    df1 = df_list[0][['mutation', 'proportion']]                # Save mutations of first lineage
-    df2 = df_list[1][['mutation', 'proportion']]                # Save mutations of second lineage
-    df = df1.merge(df2, on='mutation', how='outer', indicator=True)     # Merge all SNPs in one df
+def df_comparison(df_list, lineages, thr):
 
-    df.replace({np.nan: '-',                                    # Rename values to ease understanding
-                'left_only': lineages[0], 
-                'right_only': lineages[1], 
-                'both': 'Shared'}, inplace=True)
+    if len(df_list) < 2:
+        raise ValueError("At least 2 DataFrames are required for comparison.")
 
-    df.rename(columns = {'proportion_x':'proportion_' + lineages[0], # Rename columns to ease understanding
-                         'proportion_y':'proportion_' + lineages[1],
-                         '_merge': 'Lineage'}, inplace = True)
+    in_list = [f'in_{lineages[0]}']
+    proportion_list = [f'proportion_{lineages[0]}']
 
-    df[['REF', 'POS', 'ALT']] = df['mutation'].str.extract('(\D+)(\d+)(\D+)', expand=True)
-    df['POS'] = pd.to_numeric(df['POS'], errors='coerce')
-    df.sort_values(by=['POS'], ascending=True, inplace=True)
-    col_list = ['mutation', 'REF', 'POS', 'ALT', 'proportion_' + lineages[0], 'proportion_' + lineages[1], 'Lineage']
-    df = df[col_list]
+    merged_df = df_list[0][['mutation', 'proportion']]
+    conditions = [[merged_df['proportion'] < thr, merged_df['proportion'] >= thr], [0, 1]]
 
-    return df
+    merged_df = df_list[0][['mutation', 'proportion']]
+    merged_df[f'in_{lineages[0]}'] = np.select(conditions[0], conditions[1])
+    merged_df.rename(columns={'proportion': f'proportion_{lineages[0]}'}, inplace=True)
+
+    # Merge the remaining DataFrames
+    for i in range(1, len(df_list)):
+        df_i = df_list[i][['mutation', 'proportion']]
+        conditions = [[df_i['proportion'] < thr, df_i['proportion'] >= thr], [0, 1]]
+        df_i[f'in_{lineages[i]}'] = np.select(conditions[0], conditions[1])
+        in_list.append(f'in_{lineages[i]}')
+        df_i.rename(columns={'proportion': f'proportion_{lineages[i]}'}, inplace=True)
+        proportion_list.append(f'proportion_{lineages[i]}')
+        # Merge on 'mutation' column using outer join
+        merged_df = pd.merge(merged_df, df_i, on='mutation', how='outer', indicator=False)
+
+    # Extract REF, POS, and ALT columns
+    merged_df[['REF', 'POS', 'ALT']] = merged_df['mutation'].str.extract('(\D+)(\d+)(\D+)', expand=True)
+    merged_df['POS'] = pd.to_numeric(merged_df['POS'], errors='coerce')
+
+    # Sort by 'POS' column
+    merged_df.sort_values(by=['POS'], ascending=True, inplace=True)
+    merged_df.replace({np.nan: 0}, inplace=True)
+
+     # Sort columns
+    cols = ['mutation', 'REF', 'POS', 'ALT'] + proportion_list + in_list
+    merged_df = merged_df[cols]
+    merged_df = merged_df.loc[~(merged_df[in_list].eq(0).all(axis=1))]
+
+    return merged_df
