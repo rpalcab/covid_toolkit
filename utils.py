@@ -4,11 +4,17 @@ import pandas as pd
 import requests
 import numpy as np
 from Bio import SeqIO
+import warnings
+from pandas.errors import SettingWithCopyWarning
+import simple_colors
+
+warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
+warnings.simplefilter(action="ignore", category=DeprecationWarning)
 
 def get_markers(lineage, thr):
     # Get SNPs above threshold from Lapis and save to df
     url = f'https://lapis.cov-spectrum.org/open/v1/sample/nuc-mutations?pangoLineage={lineage}&downloadAsFile=false&dataFormat=json'
-    print(f"Url is {url}")
+    print(f"Getting {lineage} SNPs", end=' ')
     r = requests.get(url)
     result = r.json()
     df = pd.json_normalize(result['data'])
@@ -16,14 +22,16 @@ def get_markers(lineage, thr):
     try:                                                        # Removes SNPs below threshold
         df.drop(df[df['proportion'] < thr].index, inplace=True)
         df.drop(columns=['count'], inplace=True)
+        print(simple_colors.green(f'--> OK','bold'))
     except:                                                     # Unless no data returned from request
-        print(f'No data available for {lineage}. Will be ignored.')
+        print(simple_colors.red(f'--> No data available.','bold'))
         return None
 
     # Get REF, POS and ALT from df 
     df[['REF', 'POS', 'ALT']] = df['mutation'].str.extract('(\D+)(\d+)(\D+)', expand=True)
     df['POS'] = pd.to_numeric(df['POS'], errors='coerce')
     df.sort_values(by=['POS'], ascending=True, inplace=True)
+    df.name = lineage
 
     return df
 
@@ -49,14 +57,16 @@ def write_fasta(out_file, lineage, variant_fasta):
 def df_comparison(df_list, lineages, thr):
 
     if len(df_list) < 2:
-        raise ValueError("At least 2 DataFrames are required for comparison.")
+        print(simple_colors.red(f"At least 2 DataFrames are required for comparison. Comparison could not be performed.\nPlease, check output.", 'bold'))
+        exit()
 
     in_list = [f'in_{lineages[0]}']
     proportion_list = [f'proportion_{lineages[0]}']
 
     merged_df = df_list[0][['mutation', 'proportion']]
     conditions = [[merged_df['proportion'] < thr, merged_df['proportion'] >= thr], [0, 1]]
-
+    
+    merged_df = merged_df.copy()
     merged_df = df_list[0][['mutation', 'proportion']]
     merged_df[f'in_{lineages[0]}'] = np.select(conditions[0], conditions[1])
     merged_df.rename(columns={'proportion': f'proportion_{lineages[0]}'}, inplace=True)

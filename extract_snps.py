@@ -3,6 +3,7 @@
 # Third party imports
 import argparse
 import os
+import simple_colors
 
 # Local imports
 from utils import get_markers, consensus, write_fasta
@@ -36,7 +37,8 @@ ref = args.ref
 if os.path.exists(ref):
     pass
 else:
-    exit(f'Error. Reference file not found. Please check {ref}')
+    print(simple_colors.red(f'Error. Reference file not found. Please check {ref}', 'bold'))
+    exit()
 
 # Extract SNPs of every lineage
 for lineage in lineages:
@@ -48,3 +50,5 @@ for lineage in lineages:
     out_file = os.path.join(out_path, lineage)
     df.to_csv(out_file + '.csv', index=False)       # Outuput SNP table to new_file
     write_fasta(out_file, lineage, variant_fasta)   # Output sequence to new file
+
+print(simple_colors.green('Execution finished!', 'bold'))

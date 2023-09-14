@@ -3,6 +3,8 @@
 # Third party imports
 import argparse
 import os
+import warnings
+import simple_colors
 
 # Local imports
 from utils import get_markers, df_comparison
@@ -40,14 +42,17 @@ def main():
         # Get marker SNPs of two lineages
         for i, lineage in enumerate(lineages):
             df_list.append(get_markers(lineage, 0))
-            if df_list[i] is None:                                  # Exit if no data of a lineage
-                exit(f'Lineage {lineage} is not valid. Comparison could not be completed')
+            if df_list[i] is None:                                  # Warn if no data of a lineage
+                warnings.warn(f'Lineage {lineage} is not valid.')
 
         # Lineages comparison
-        comp_df = df_comparison(df_list, lineages, thr)
-
-        out_file = os.path.join(out_path, lineages[0] + '_' + lineages[1])
+        df_list = [df for df in df_list if df is not None]
+        avail_lins = [df.name for df in df_list]
+        comp_df = df_comparison(df_list, avail_lins, thr)
+        out_file = os.path.join(out_path, '_'.join([i for i in avail_lins]))
         comp_df.to_csv(out_file + '.csv', index=False)
+        
+        print(simple_colors.green('Comparison finished!', 'bold'))
 
 if __name__ == "__main__":
         main()
